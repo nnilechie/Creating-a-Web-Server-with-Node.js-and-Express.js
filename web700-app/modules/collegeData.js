@@ -1,99 +1,103 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("fs");
 
-// Class to hold the students and courses data
-class Data {
-  constructor(students, courses) {
-    this.students = students;
-    this.courses = courses;
-  }
+class Data{
+    constructor(students, courses){
+        this.students = students;
+        this.courses = courses;
+    }
 }
 
-// Declaring the variable dataCollection as null
 let dataCollection = null;
 
-// This function is to initialize and load the JSON data
-function initialize() {
-  return new Promise((resolve, reject) => {
-    // Read students.json file
-    fs.readFile(path.join(__dirname, '../data/students.json'), 'utf8', (err, studentData) => {
-      if (err) { // if error found in loading the file catch it 
-        reject("unable to read students.json");
-        return;
-      }
-      // Read courses.json file
-      fs.readFile(path.join(__dirname, '../data/courses.json'), 'utf8', (err, courseData) => {
-        if (err) { // catch error if found
-          reject("unable to read courses.json");
-          return;
-        }
-        // Parse the JSON data and create a new Data instance
-        dataCollection = new Data(JSON.parse(studentData), JSON.parse(courseData));
-        resolve();
-      });
+module.exports.initialize = function () {
+    return new Promise( (resolve, reject) => {
+        fs.readFile('./data/courses.json','utf8', (err, courseData) => {
+            if (err) {
+                reject("unable to load courses"); return;
+            }
+
+            fs.readFile('./data/students.json','utf8', (err, studentData) => {
+                if (err) {
+                    reject("unable to load students"); return;
+                }
+
+                dataCollection = new Data(JSON.parse(studentData), JSON.parse(courseData));
+                resolve();
+            });
+        });
     });
-  });
 }
 
-// Function to get all students
-function getAllStudents() {
-  return new Promise((resolve, reject) => {
-    if (dataCollection.students.length > 0) { // iterates through the student array to check if list is empty
-      resolve(dataCollection.students); // resolves the promise if students are found
-    } else {
-      reject("no results returned");
+module.exports.getAllStudents = function(){
+    return new Promise((resolve,reject)=>{
+        if (dataCollection.students.length == 0) {
+            reject("query returned 0 results"); return;
+        }
+
+        resolve(dataCollection.students);
+    })
+}
+
+module.exports.getTAs = function () {
+    return new Promise(function (resolve, reject) {
+        var filteredStudents = [];
+
+        for (let i = 0; i < dataCollection.students.length; i++) {
+            if (dataCollection.students[i].TA == true) {
+                filteredStudents.push(dataCollection.students[i]);
+            }
+        }
+
+        if (filteredStudents.length == 0) {
+            reject("query returned 0 results"); return;
+        }
+
+        resolve(filteredStudents);
+    });
+};
+
+module.exports.getCourses = function(){
+   return new Promise((resolve,reject)=>{
+    if (dataCollection.courses.length == 0) {
+        reject("query returned 0 results"); return;
     }
-  });
-}
 
-// Function to get all TAs
-function getTAs() {
-  return new Promise((resolve, reject) => {
-    const tas = dataCollection.students.filter(student => student.TA); //Filters through the students array to find those who are TAs.
-    if (tas.length > 0) { //checks if any ta is found in the list 
-      resolve(tas); //resolves the promise if tas are found
-    } else {
-      reject("no results returned"); // if no ta found output 'no results returned.
-    }
-  });
-}
+    resolve(dataCollection.courses);
+   });
+};
 
-// Function to get all courses
-function getCourses() {
-  return new Promise((resolve, reject) => {
-    if (dataCollection.courses.length > 0) { // iterates through the student array to check if list is empty
-      resolve(dataCollection.courses); // resolves the promise if courses are found
-    } else {
-      reject("no results returned");
-    }
-  });
-}
+module.exports.getStudentByNum = function (num) {
+    return new Promise(function (resolve, reject) {
+        var foundStudent = null;
 
-// Function to get students by course
-function getStudentsByCourse(course) {
-  return new Promise((resolve, reject) => {
-      const courseStudents = students.filter(student => student.course === course);
-      if (courseStudents.length === 0) {
-          reject("no results returned"); // Rejecting promise if there are no student found for the specified course id
-          return;
-      }
-      resolve(courseStudents); // Resolving the promise with filtered students for the course id
-  });
-}
+        for (let i = 0; i < dataCollection.students.length; i++) {
+            if (dataCollection.students[i].studentNum == num) {
+                foundStudent = dataCollection.students[i];
+            }
+        }
 
-// Function to get a student by student number
-function getStudentByNum(num) {
-  return new Promise((resolve, reject) => {
-      const student = students.find(student => student.studentNum === num);
-      if (!student) {
-          reject("no results returned"); // Rejecting promise if no students found
-          return;
-      }
-      resolve(student);// Resolving the promise with found student
-  });
-}
+        if (!foundStudent) {
+            reject("query returned 0 results"); return;
+        }
 
+        resolve(foundStudent);
+    });
+};
 
+module.exports.getStudentsByCourse = function (course) {
+    return new Promise(function (resolve, reject) {
+        var filteredStudents = [];
 
-// Export the functions
-module.exports = { initialize, getAllStudents, getTAs, getCourses, getStudentsByCourse, getStudentByNum };
+        for (let i = 0; i < dataCollection.students.length; i++) {
+            if (dataCollection.students[i].course == course) {
+                filteredStudents.push(dataCollection.students[i]);
+            }
+        }
+
+        if (filteredStudents.length == 0) {
+            reject("query returned 0 results"); return;
+        }
+
+        resolve(filteredStudents);
+    });
+};
